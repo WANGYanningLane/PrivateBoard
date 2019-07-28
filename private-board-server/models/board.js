@@ -4,6 +4,7 @@ function Board() {
     this.name;
     this.memos;
     this.updated_at;
+    this.log;
 }
 
 module.exports = Board;

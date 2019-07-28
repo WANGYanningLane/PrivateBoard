@@ -65,6 +65,7 @@ router.post('/info/create', function(req, res) {
   board.id = id;
   board.pubKey = pubKey; 
   board.updated_at = Date.now();
+  board.log = "hid:" + id + ":genesis";
   //build name-board map in levelDB
   var nameKey = "bname:" + name;
   LevelDB.batch([{
@@ -102,12 +103,16 @@ router.post('/info/update', function(req, res) {
       res.end("Update Failed: not latest version");
       return;
     } else {
-      var historyKey = "hid:" + id + ":" + board.updated_at;
       var history = new History();
-      history.id = historyKey;
-      history.content = board.memos;
+      history.id = id + ":" + timestamp;
+      var prevHash = board.log;
+      history.prevHash = prevHash;
+      history.content = content;
+      history.timestamp = timestamp;
+      var historyKey = "hid:" + history.id + ":" + Crypto.sha256(JSON.stringify(history));
       board.memos = content;
       board.updated_at = timestamp;
+      board.log = historyKey;
       LevelDB.batch([{
         type: 'put',
         key: boardKey,
@@ -125,21 +130,6 @@ router.post('/info/update', function(req, res) {
       })
     }
   });
-})
-
-//api list all boards
-router.get("/infos", function(req, res){
-  var option = {prefix: "bid:"};
-  var dataList = {};
-  LevelDB.find(option, function(key, value){
-    if (key != null) {
-      console.log(value);
-      dataList[key] = JSON.parse(value);
-    } else {
-      console.log(value);
-      res.end(JSON.stringify(dataList));
-    }
-  })
 })
 
 module.exports = router;
